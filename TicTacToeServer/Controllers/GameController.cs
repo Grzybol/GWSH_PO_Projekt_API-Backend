@@ -77,6 +77,7 @@ namespace TicTacToeServer.Controllers
                 var newId = _activeGames.Count > 0 ? _activeGames.Max(g => g.Id) + 1 : 1;
                 var game = new Game { Id = newId };
                 game.Players.Add(player);
+                game.CurrentTurn = player;
                 _activeGames.Add(game);
                 SaveGames();
                 return Ok(game);
@@ -86,6 +87,8 @@ namespace TicTacToeServer.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+        
+
 
         [HttpPost("join")]
         public IActionResult JoinGame([FromBody] string player, [FromQuery] int gameId)
@@ -112,7 +115,7 @@ namespace TicTacToeServer.Controllers
             return Ok(game);
         }
 
-
+        /*
         [HttpPost("move")]
         public IActionResult MakeMove([FromBody] Move move)
         {
@@ -140,7 +143,7 @@ namespace TicTacToeServer.Controllers
                 return BadRequest(new { message = "It's not your turn" });
             }
 
-            if (game.MakeMove(move.Row, move.Col, playerSymbol))
+            if (game.MakeMove(move.Row, move.Col, move.Player,playerSymbol))
             {
                 if (!game.IsActive)
                 {
@@ -156,7 +159,38 @@ namespace TicTacToeServer.Controllers
             Console.WriteLine("Invalid move attempted");
             return BadRequest(new { message = "Invalid move" });
         }
+        */
+        [HttpPost("move")]
+        public IActionResult MakeMove([FromBody] Move move)
+        {
+            Console.WriteLine($"Received move: Player {move.Player}, Row {move.Row}, Col {move.Col}, Game ID: {move.GameId}");
 
+            var game = _activeGames.FirstOrDefault(g => g.Id == move.GameId && g.IsActive && g.Players.Contains(move.Player));
+            if (game == null)
+            {
+                Console.WriteLine("No active game found or player not in game");
+                return BadRequest(new { message = "No active game found or not your turn or not your game" });
+            }
+
+            // Determine player's symbol (X or O)
+            string playerSymbol = game.Players.IndexOf(move.Player) == 0 ? "X" : "O";
+
+            if (game.MakeMove(move.Row, move.Col, move.Player, playerSymbol))
+            {
+                if (!game.IsActive)
+                {
+                    _activeGames.Remove(game);
+                    _completedGames.Add(game);
+                }
+                SaveGames();
+                Console.WriteLine($"Move successful: Player {move.Player} moved to Row {move.Row}, Col {move.Col}");
+                Console.WriteLine($"Next turn: {game.CurrentTurn}");
+                return Ok(game);
+            }
+
+            Console.WriteLine("Invalid move attempted");
+            return BadRequest(new { message = "Invalid move" });
+        }
 
 
 

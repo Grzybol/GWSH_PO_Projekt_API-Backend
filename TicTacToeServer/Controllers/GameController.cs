@@ -165,18 +165,30 @@ namespace TicTacToeServer.Controllers
         {
             Console.WriteLine($"Received move: Player {move.Player}, Row {move.Row}, Col {move.Col}, Game ID: {move.GameId}");
 
+            // Find the game
             var game = _activeGames.FirstOrDefault(g => g.Id == move.GameId && g.IsActive && g.Players.Contains(move.Player));
+
+            // Check if game is valid and player is part of the game
             if (game == null)
             {
                 Console.WriteLine("No active game found or player not in game");
                 return BadRequest(new { message = "No active game found or not your turn or not your game" });
             }
 
+            // Ensure there are at least two players in the game
+            if (game.Players.Count < 2)
+            {
+                Console.WriteLine("Not enough players to make a move");
+                return BadRequest(new { message = "Not enough players in the game" });
+            }
+
             // Determine player's symbol (X or O)
             string playerSymbol = game.Players.IndexOf(move.Player) == 0 ? "X" : "O";
 
+            // Attempt to make the move
             if (game.MakeMove(move.Row, move.Col, move.Player, playerSymbol))
             {
+                // If the game is now inactive, move it to completed games
                 if (!game.IsActive)
                 {
                     _activeGames.Remove(game);
@@ -191,6 +203,7 @@ namespace TicTacToeServer.Controllers
             Console.WriteLine("Invalid move attempted");
             return BadRequest(new { message = "Invalid move" });
         }
+
 
 
 

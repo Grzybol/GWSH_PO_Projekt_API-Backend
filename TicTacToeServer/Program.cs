@@ -24,9 +24,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection(); // Make sure HTTPS redirection is used before CORS for secure requests.
+// Remove HTTPS redirection middleware
+// app.UseHttpsRedirection();
 
-app.UseCors("AllowAll"); // Apply CORS policy for all incoming requests.
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 

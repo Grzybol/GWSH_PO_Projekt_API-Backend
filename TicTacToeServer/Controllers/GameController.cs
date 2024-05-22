@@ -174,6 +174,10 @@ namespace TicTacToeServer.Controllers
                 Console.WriteLine("No active game found or player not in game");
                 return BadRequest(new { message = "No active game found or not your turn or not your game" });
             }
+            if (!game.Players.Contains(move.Player))
+            {
+                return BadRequest(new { message = "You are not a part of this game." });
+            }
 
             // Ensure there are at least two players in the game
             if (game.Players.Count < 2)
@@ -193,11 +197,23 @@ namespace TicTacToeServer.Controllers
                 {
                     _activeGames.Remove(game);
                     _completedGames.Add(game);
+                    SaveGames();
+
+                    // Create a response that includes the final board state and the outcome
+                    var response = new
+                    {
+                        Game = game,
+                        Message = game.Winner != null ? $"Game over: {game.Winner} wins!" : "Game over: Draw!"
+                    };
+
+                    // Ideally, you'd use SignalR or another real-time tech to notify both players
+                    // For now, we return the same response to the requester, which should be handled client-side
+                    return Ok(response);
                 }
                 SaveGames();
                 Console.WriteLine($"Move successful: Player {move.Player} moved to Row {move.Row}, Col {move.Col}");
                 Console.WriteLine($"Next turn: {game.CurrentTurn}");
-                return Ok(game);
+                return Ok(new { Game = game, Message = $"Next turn: {game.CurrentTurn}" });
             }
 
             Console.WriteLine("Invalid move attempted");

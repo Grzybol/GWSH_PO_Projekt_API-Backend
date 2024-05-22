@@ -1,4 +1,12 @@
+using System.Net;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Explicit Kestrel configuration
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Listen(IPAddress.Any, 5000); // Listen on all IP addresses
+});
 
 // Add services to the container.
 builder.Services.AddCors(options =>
@@ -24,8 +32,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Remove HTTPS redirection middleware
-// app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Make sure this is commented out if you don't want to force HTTPS
 
 app.UseCors("AllowAll");
 

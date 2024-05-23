@@ -49,16 +49,11 @@
                 if (CheckWin(playerSymbol))
                 {
                     Winner = player;
-                    //NotifyClientsGameUpdate();
-                    Task.Delay(1500).ContinueWith(t =>
-                    {
-                        IsActive = false;
-                        // Optionally notify clients the game is now inactive if needed
-                        //NotifyClientsGameInactive(); // You need to define how to handle this notification.
-                    });
+                    IsActive = false;
                 }
                 else if (Board.SelectMany(x => x).All(x => x != null))
                 {
+                    //remis
                     IsActive = false;
                 }
                 else

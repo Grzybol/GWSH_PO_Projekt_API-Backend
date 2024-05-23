@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text.Json;
 using TicTacToeServer.Models;
 
@@ -74,7 +75,11 @@ namespace TicTacToeServer.Controllers
         {
             try
             {
-                var newId = _activeGames.Count > 0 ? _activeGames.Max(g => g.Id) + 1 : 1;
+                var newId = Math.Max(
+                     _activeGames.Any() ? _activeGames.Max(g => g.Id) : 0,
+                     _completedGames.Any() ? _completedGames.Max(g => g.Id) : 0
+                  ) + 1;
+
                 var game = new Game { Id = newId };
                 game.Players.Add(player);
                 game.CurrentTurn = player;
@@ -115,51 +120,6 @@ namespace TicTacToeServer.Controllers
             return Ok(game);
         }
 
-        /*
-        [HttpPost("move")]
-        public IActionResult MakeMove([FromBody] Move move)
-        {
-            Console.WriteLine($"Received move: Player {move.Player}, Row {move.Row}, Col {move.Col}, Game ID: {move.GameId}");
-
-            // Find the game by ID
-            var game = _activeGames.FirstOrDefault(g => g.Id == move.GameId && g.IsActive && g.Players.Contains(move.Player));
-            if (game == null)
-            {
-                Console.WriteLine("No active game found or player not in game");
-                Console.WriteLine($"Active games count: {_activeGames.Count}");
-                foreach (var g in _activeGames)
-                {
-                    Console.WriteLine($"Game ID: {g.Id}, Players: {string.Join(", ", g.Players)}, Current Turn: {g.CurrentTurn}, Is Active: {g.IsActive}");
-                }
-                return BadRequest(new { message = "No active game found or not your turn or not your game" });
-            }
-
-            // Determine player's symbol (X or O)
-            string playerSymbol = game.Players.IndexOf(move.Player) == 0 ? "X" : "O";
-
-            if (game.CurrentTurn != playerSymbol)
-            {
-                Console.WriteLine($"Invalid turn: It's {game.CurrentTurn}'s turn, but {move.Player} ({playerSymbol}) tried to move.");
-                return BadRequest(new { message = "It's not your turn" });
-            }
-
-            if (game.MakeMove(move.Row, move.Col, move.Player,playerSymbol))
-            {
-                if (!game.IsActive)
-                {
-                    _activeGames.Remove(game);
-                    _completedGames.Add(game);
-                }
-                SaveGames();
-                Console.WriteLine($"Move successful: Player {move.Player} moved to Row {move.Row}, Col {move.Col}");
-                Console.WriteLine($"Next turn: {game.CurrentTurn}");
-                return Ok(game);
-            }
-
-            Console.WriteLine("Invalid move attempted");
-            return BadRequest(new { message = "Invalid move" });
-        }
-        */
         [HttpPost("move")]
         public IActionResult MakeMove([FromBody] Move move)
         {
@@ -192,9 +152,11 @@ namespace TicTacToeServer.Controllers
             // Attempt to make the move
             if (game.MakeMove(move.Row, move.Col, move.Player, playerSymbol))
             {
+                Console.WriteLine($"IsActive {game.IsActive}");
                 // If the game is now inactive, move it to completed games
                 if (!game.IsActive)
                 {
+                    
                     _activeGames.Remove(game);
                     _completedGames.Add(game);
                     SaveGames();
@@ -211,7 +173,7 @@ namespace TicTacToeServer.Controllers
                     return Ok(response);
                 }
                 SaveGames();
-                Console.WriteLine($"Move successful: Player {move.Player} moved to Row {move.Row}, Col {move.Col}");
+                Console.WriteLine($"Move successful: Player {move.Player} moved to Row {move.Row}, Col {move.Col}, IsActive {game.IsActive}");
                 Console.WriteLine($"Next turn: {game.CurrentTurn}");
                 return Ok(new { Game = game, Message = $"Next turn: {game.CurrentTurn}" });
             }
@@ -227,7 +189,8 @@ namespace TicTacToeServer.Controllers
         [HttpGet("status")]
         public IActionResult GetStatus([FromQuery] int gameId)
         {
-            var game = _activeGames.FirstOrDefault(g => g.Id == gameId);
+            var game = _completedGames.FirstOrDefault(g => g.Id == gameId) ?? _activeGames.FirstOrDefault(g => g.Id == gameId);
+
             if (game != null)
             {
                 return Ok(game);

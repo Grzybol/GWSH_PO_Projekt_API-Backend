@@ -165,7 +165,7 @@ namespace TicTacToeServer.Controllers
                     var response = new
                     {
                         Game = game,
-                        Message = game.Winner != null ? $"Game over: {game.Winner} wins!" : "Game over: Draw!"
+                        Message = game.Winner != null ? $"Game over: {game.Winner} wins!" : "Game over - Draw!"
                     };
 
                     // Ideally, you'd use SignalR or another real-time tech to notify both players

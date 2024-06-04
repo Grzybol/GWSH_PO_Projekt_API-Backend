@@ -1,11 +1,16 @@
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Explicit Kestrel configuration
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    serverOptions.Listen(IPAddress.Any, 5000); // Listen on all IP addresses
+    serverOptions.Listen(IPAddress.Any, 5000); // HTTP
+    serverOptions.Listen(IPAddress.Any, 5001, listenOptions =>
+    {
+        listenOptions.UseHttps(new X509Certificate2("/etc/letsencrypt/live/boxpvp.top/boxpvp.top.pfx", "9dMwDuB1CJdEuA36"));
+    });
 });
 
 // Add services to the container.
@@ -32,7 +37,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// app.UseHttpsRedirection(); // Make sure this is commented out if you don't want to force HTTPS
+app.UseHttpsRedirection(); // Uncomment this to force HTTPS in non-development environments
 
 app.UseCors("AllowAll");
 

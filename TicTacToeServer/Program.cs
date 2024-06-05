@@ -1,30 +1,51 @@
+using Microsoft.AspNetCore.Server.Kestrel.Https;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.IO;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Explicit Kestrel configuration
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    serverOptions.Listen(IPAddress.Any, 5000); // HTTP
-    serverOptions.Listen(IPAddress.Any, 5001, listenOptions =>
+    serverOptions.Listen(IPAddress.Any, 5000); // Listen for HTTP
+    serverOptions.Listen(IPAddress.Any, 5001, listenOptions => // Listen for HTTPS
     {
-        listenOptions.UseHttps(new X509Certificate2("/etc/letsencrypt/live/boxpvp.top/boxpvp.top.pfx", "9dMwDuB1CJdEuA36"));
+        var certificate = LoadCertificate("/etc/ssl/certs/boxpvp.top.pem", "/etc/ssl/private/boxpvp.top.key");
+        listenOptions.UseHttps(new HttpsConnectionAdapterOptions
+        {
+            ServerCertificate = certificate
+        });
     });
 });
+
+// Method to load the certificate and private key
+X509Certificate2 LoadCertificate(string certPath, string keyPath)
+{
+    string certificateText = File.ReadAllText(certPath);
+    string privateKeyText = File.ReadAllText(keyPath);
+    using var publicKey = X509Certificate2.CreateFromPem(certificateText);
+    using var rsaPrivateKey = RSA.Create();
+    rsaPrivateKey.ImportFromPem(privateKeyText.ToCharArray());
+    return publicKey.CopyWithPrivateKey(rsaPrivateKey);
+}
 
 // Add services to the container.
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader());
+    options.AddPolicy("AllowSpecificOrigin",
+        builder =>
+        {
+            builder.WithOrigins("https://www.boxpvp.top", "https://boxpvp.top")
+                   .AllowAnyMethod()
+                   .AllowAnyHeader();
+        });
 });
 
 builder.Services.AddControllers();
-
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -37,9 +58,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection(); // Uncomment this to force HTTPS in non-development environments
+app.UseHttpsRedirection();
 
-app.UseCors("AllowAll");
+app.UseCors("AllowSpecificOrigin");
 
 app.UseAuthorization();
 

@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.Listen(IPAddress.Any, 5000); // Listen for HTTP
-    serverOptions.Listen(IPAddress.Any, 5001, listenOptions => // Listen for HTTPS
+    serverOptions.Listen(IPAddress.Any, 2083, listenOptions => // Listen for HTTPS
     {
         var certificate = LoadCertificate("/etc/ssl/certs/boxpvp.top.pem", "/etc/ssl/private/boxpvp.top.key");
         listenOptions.UseHttps(new HttpsConnectionAdapterOptions
@@ -39,7 +39,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowSpecificOrigin",
         builder =>
         {
-            builder.WithOrigins("https://www.boxpvp.top", "https://boxpvp.top")
+            builder.WithOrigins("https://www.boxpvp.top", "https://boxpvp.top", "https://boxpvp.top/*")
                    .AllowAnyMethod()
                    .AllowAnyHeader();
         });

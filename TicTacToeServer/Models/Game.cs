@@ -44,16 +44,19 @@
         {
             if (IsActive && row >= 0 && row < 3 && col >= 0 && col < 3 && Board[row][col] == null && Players.Contains(player) && player == CurrentTurn)
             {
-                Console.WriteLine($"Player {player} is making a move with symbol {playerSymbol} at row {row}, col {col}");
+                Console.WriteLine($"Player {player} is making a move with symbol {playerSymbol} at row {row}, col {col}, IsActive: {IsActive}");
                 Board[row][col] = playerSymbol;
                 if (CheckWin(playerSymbol))
                 {
                     Winner = player;
                     IsActive = false;
+                    Console.WriteLine($"Player {player} won. IsActive: {IsActive}");
                 }
                 else if (Board.SelectMany(x => x).All(x => x != null))
                 {
+                    //remis
                     IsActive = false;
+                    Console.WriteLine($"Draw");
                 }
                 else
                 {
